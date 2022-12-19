@@ -3,7 +3,7 @@ import * as React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import Home from './screens/Home';
-
+import Landing from './screens/Landing'
 
 
 const Stack = createStackNavigator();
@@ -13,6 +13,7 @@ function App() {
     <NavigationContainer>
       <Stack.Navigator>
         <Stack.Screen name = "Home" component = {Home} />
+        <Stack.Screen name = "Landing" component = {Landing} /> 
       </Stack.Navigator>
     </NavigationContainer>
   );

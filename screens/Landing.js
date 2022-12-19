@@ -1,17 +1,17 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState, useEffect } from 'react';
 import {
-    View,
     StyleSheet,
-    Image,
+    View,
     Text,
-    TextInput,
     Alert,
+    TextInput,
     ImageBackground
 } from 'react-native';
 import CustomButton from './utils/CustomButton';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function Home({ navigation }) {
+
+export default function Landing({ navigation, route }) {
 
     const [name, setName] = useState('');
     const [age, setAge] = useState('');
@@ -25,7 +25,9 @@ export default function Home({ navigation }) {
             AsyncStorage.getItem('UserData')
                 .then(value => {
                     if (value != null) {
-                        navigation.navigate('Landing');
+                        let user = JSON.parse(value);
+                        setName(user.Name);
+                        setAge(user.Age);
                     }
                 })
         } catch (error) {
@@ -33,50 +35,59 @@ export default function Home({ navigation }) {
         }
     }
 
-    const setData = async () => {
-        if (name.length == 0 || age.length == 0) {
+    const updateData = async () => {
+        if (name.length == 0) {
             Alert.alert('Warning!', 'Please write your data.')
         } else {
             try {
                 var user = {
-                    Name: name,
-                    Age: age
+                    Name: name
                 }
-                await AsyncStorage.setItem('UserData', JSON.stringify(user));
-                navigation.navigate('Landing');
+                await AsyncStorage.mergeItem('UserData', JSON.stringify(user));
+                Alert.alert('Success!', 'Your data has been updated.');
             } catch (error) {
                 console.log(error);
             }
         }
     }
 
+    const removeData = async () => {
+        try {
+            await AsyncStorage.clear();
+            navigation.navigate('Home');
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
     return (
-        <ImageBackground source={require('/home/divum/ReactNativeProjects/DoneWithIt/assets/ffflurry.png')} 
+        <ImageBackground source={require('/home/divum/ReactNativeProjects/DoneWithIt/assets/gggrain.png')}
         style = {styles.bg}>
-        <View style={styles.body} >
-            <Image
-                style={styles.logo}
-                source={require('../assets/login.png')}
-            />
-            <Text style={styles.text}>
-                Hello Please 
-                Login
+        <View style={styles.body}>
+            <Text style={
+                styles.text}>
+                Welcome {name} !
+            </Text>
+            <Text style={
+                styles.text
+            }>
+                Your age is {age}
             </Text>
             <TextInput
                 style={styles.input}
                 placeholder='Enter your name'
+                value={name}
                 onChangeText={(value) => setName(value)}
             />
-            <TextInput
-                style={styles.input}
-                placeholder='Enter your age'
-                keyboardType='numeric'
-                onChangeText={(value) => setAge(value)}
+            <CustomButton
+                title='Update'
+                color='#ff7f00'
+                onPressFunction={updateData}
             />
             <CustomButton
-                title='Login'
-                color='#1eb900'
-                onPressFunction={setData}
+                title='Remove'
+                color='#f40100'
+                onPressFunction={removeData}
             />
         </View>
         </ImageBackground>
@@ -87,17 +98,10 @@ const styles = StyleSheet.create({
     body: {
         flex: 1,
         alignItems: 'center',
-        // backgroundColor: '#0080ff',
-    },
-    logo: {
-        width: 100,
-        height: 100,
-        margin: 20,
     },
     text: {
-        fontSize: 30,
-        color: '#ffffff',
-        marginBottom: 130,
+        fontSize: 40,
+        margin: 10,
     },
     input: {
         width: 300,
@@ -107,10 +111,11 @@ const styles = StyleSheet.create({
         backgroundColor: '#ffffff',
         textAlign: 'center',
         fontSize: 20,
+        marginTop: 130,
         marginBottom: 10,
     },
     bg : {
         flex : 1,
-        resizeMode : 'cover'
+        resizeMode :'cover'
     }
 })
