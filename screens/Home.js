@@ -6,15 +6,19 @@ import {
     Text,
     TextInput,
     Alert,
-    ImageBackground
+    ImageBackground,
+    Modal,
+    ToastAndroid,
 } from 'react-native';
 import CustomButton from './utils/CustomButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Icons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 export default function Home({ navigation }) {
 
     const [name, setName] = useState('');
-    const [age, setAge] = useState('');
+    const [pwd, setPwd] = useState('');
+    const [showWarning, setShowWarning] = useState(false);
 
     useEffect(() => {
         getData();
@@ -34,16 +38,30 @@ export default function Home({ navigation }) {
     }
 
     const setData = async () => {
-        if (name.length == 0 || age.length == 0) {
-            Alert.alert('Warning!', 'Please write your data.')
-        } else {
+        if (name.length == 0 ) {
+            Alert.alert('Warning!', 'Please enter your name.')
+        }
+        
+        else if (pwd.length == 0)
+        {
+            Alert.alert('Warning!!', 'Please enter your Password.')
+        }
+         else {
             try {
                 var user = {
                     Name: name,
-                    Age: age
+                    Password : pwd
                 }
                 await AsyncStorage.setItem('UserData', JSON.stringify(user));
-                navigation.navigate('Landing');
+                if (
+                    (name.trim() == 'Sudharsan' || name.trim() == 'Vijay' ) 
+                        && 
+                    (pwd.trim() == '12345' || pwd.trim() == '0000')
+                    ){
+                navigation.navigate('Landing');}
+                else {
+                    Alert.alert('Warning!!', 'Please enter valid Username or Password.')
+                }
             } catch (error) {
                 console.log(error);
             }
@@ -65,13 +83,18 @@ export default function Home({ navigation }) {
             <TextInput
                 style={styles.input}
                 placeholder='Enter your name'
+                placeholderTextColor={'grey'}
                 onChangeText={(value) => setName(value)}
             />
             <TextInput
                 style={styles.input}
-                placeholder='Enter your age'
-                keyboardType='numeric'
-                onChangeText={(value) => setAge(value)}
+                placeholder='Password'
+                secureTextEntry 
+                placeholderTextColor={'grey'}
+                // keyboardType='numeric'
+                onChangeText={(value) => setPwd(value)}
+                // maxLength = {2}
+                minLength = {8}
             />
             <CustomButton
                 title='Login'
@@ -108,6 +131,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 20,
         marginBottom: 10,
+        color: 'black',
     },
     bg : {
         flex : 1,

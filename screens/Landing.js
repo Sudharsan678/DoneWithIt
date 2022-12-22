@@ -1,20 +1,26 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useState, useEffect } from 'react';
+import React , {useState, useEffect}from 'react';
 import {
-    StyleSheet,
-    View,
-    Text,
-    Alert,
-    TextInput,
-    ImageBackground
+  StyleSheet,
+  View,
+  TextInput,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  Alert,
+  Button,
 } from 'react-native';
-import CustomButton from './utils/CustomButton';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import MIcon from 'react-native-vector-icons/Ionicons';
+// import icons from 'react-native-vector-icons/AntDesign';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+const COLORS = {primary: '#1f145c', white: '#fff'};
 
+const Landing = () => {
+  const [todos, setTodos] = React.useState([]);
+  const [textInput, setTextInput] = React.useState('');
 
-export default function Landing({ navigation, route }) {
-
-    const [name, setName] = useState('');
-    const [age, setAge] = useState('');
+  const [name, setName] = useState('');
+    // const [age, setAge] = useState('');
 
     useEffect(() => {
         getData();
@@ -27,7 +33,7 @@ export default function Landing({ navigation, route }) {
                     if (value != null) {
                         let user = JSON.parse(value);
                         setName(user.Name);
-                        setAge(user.Age);
+                        // setAge(user.Age);
                     }
                 })
         } catch (error) {
@@ -35,87 +41,214 @@ export default function Landing({ navigation, route }) {
         }
     }
 
-    const updateData = async () => {
-        if (name.length == 0) {
-            Alert.alert('Warning!', 'Please write your data.')
-        } else {
-            try {
-                var user = {
-                    Name: name
-                }
-                await AsyncStorage.mergeItem('UserData', JSON.stringify(user));
-                Alert.alert('Success!', 'Your data has been updated.');
-            } catch (error) {
-                console.log(error);
-            }
-        }
-    }
+  React.useEffect(() => {
+    getTodosFromUserDevice();
+  }, []);
 
-    const removeData = async () => {
-        try {
-            await AsyncStorage.clear();
-            navigation.navigate('Home');
-        } catch (error) {
-            console.log(error);
-        }
-    }
+  React.useEffect(() => {
+    saveTodoToUserDevice(todos);
+  }, [todos]);
 
+  const addTodo = () => {
+    if (textInput == '') {
+      Alert.alert('Error', 'Please input todo');
+    } else {
+      const newTodo = {
+        id: Math.random(),
+        task: textInput,
+        completed: false,
+      };
+      setTodos([...todos, newTodo]);
+      setTextInput('');
+    }
+  };
+
+  const saveTodoToUserDevice = async todos => {
+    try {
+      const stringifyTodos = JSON.stringify(todos);
+      await AsyncStorage.setItem('todos', stringifyTodos);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const getTodosFromUserDevice = async () => {
+    try {
+      const todos = await AsyncStorage.getItem('todos');
+      if (todos != null) {
+        setTodos(JSON.parse(todos));
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const markTodoComplete = todoId => {
+    const newTodosItem = todos.map(item => {
+      if (item.id == todoId) {
+        return {...item, completed: true};
+      }
+      return item;
+    });
+
+    setTodos(newTodosItem);
+  };
+
+  const deleteTodo = todoId => {
+    const newTodosItem = todos.filter(item => item.id != todoId);
+    setTodos(newTodosItem);
+  };
+
+  const clearAllTodos = () => {
+    Alert.alert('Confirm', 'Clear todos?', [
+      {
+        text: 'Yes',
+        onPress: () => setTodos([]),
+      },
+      {
+        text: 'No',
+      },
+    ]);
+  };
+
+  const ListItem = ({todo}) => {
     return (
-        <ImageBackground source={require('/home/divum/ReactNativeProjects/DoneWithIt/assets/gggrain.png')}
-        style = {styles.bg}>
-        <View style={styles.body}>
-            <Text style={
-                styles.text}>
-                Welcome {name} !
-            </Text>
-            <Text style={
-                styles.text
-            }>
-                Your age is {age}
-            </Text>
-            <TextInput
-                style={styles.input}
-                placeholder='Enter your name'
-                value={name}
-                onChangeText={(value) => setName(value)}
-            />
-            <CustomButton
-                title='Update'
-                color='#ff7f00'
-                onPressFunction={updateData}
-            />
-            <CustomButton
-                title='Remove'
-                color='#f40100'
-                onPressFunction={removeData}
-            />
+      <View style={styles.listItem}>
+        <View style={{flex: 1}}>
+          <Text
+            style={{
+              fontWeight: 'bold',
+              fontSize: 15,
+              color: COLORS.primary,
+              textDecorationLine: todo?.completed ? 'line-through' : 'none',
+            }}>
+            {todo?.task}
+          </Text>
         </View>
-        </ImageBackground>
-    )
-}
+        {!todo?.completed && (
+          <TouchableOpacity onPress={() => markTodoComplete(todo.id)}>
+            <View style={[styles.actionIcon, {backgroundColor: 'green'}]}>
+              {/* <Icon name="done" size={20} color="white" /> */}
+              <MIcon name = 'md-checkmark-done-outline' size ={20}  color = "white" />
+            </View>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity onPress={() => deleteTodo(todo.id)}>
+          <View style={styles.actionIcon}>
+            <Icon name="delete" size={20} color="white" />
+          </View>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: 'white',
+      }}>
+      <View style={styles.header}>
+        <Text
+          style={{
+            fontWeight: 'bold',
+            fontSize: 20,
+            color: COLORS.primary,
+          }}>
+          Welcome {name} !!!
+        </Text>
+        <Icon name="delete" size={25} color="red" onPress={clearAllTodos} />
+      </View>
+      <FlatList
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{padding: 20, paddingBottom: 100}}
+        data={todos}
+        renderItem={({item}) => <ListItem todo={item} />}
+      />
+
+      <View style={styles.footer}>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style = {styles.textTo}
+            value={textInput}
+            placeholder="Add Todo"
+            placeholderTextColor={'grey'}
+            onChangeText={text => setTextInput(text)}
+          />
+        </View>
+        <TouchableOpacity onPress={addTodo}>
+          <View style={styles.iconContainer}>
+            <Icon name="add" color="white" size={30} />
+            {/* <MIcon  name = 'add' size = {20} color = 'red'/> */}
+          </View>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
-    body: {
-        flex: 1,
-        alignItems: 'center',
-    },
-    text: {
-        fontSize: 40,
-        margin: 10,
-    },
-    input: {
-        width: 300,
-        borderWidth: 1,
-        borderColor: '#555',
-        borderRadius: 10,
-        backgroundColor: '#ffffff',
-        textAlign: 'center',
-        fontSize: 20,
-        marginTop: 130,
-        marginBottom: 10,
-    },
-    bg : {
-        flex : 1,
-        resizeMode :'cover'
-    }
-})
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    backgroundColor: COLORS.white,
+    // color : 'black'
+  },
+  inputContainer: {
+    height : 50,
+    paddingHorizontal: 20,
+    elevation: 40,
+    backgroundColor: COLORS.white,
+    flex: 1,
+    marginVertical: 20,
+    marginRight: 20,
+    borderRadius: 30,
+    color : COLORS.black,
+    // color : 'black'
+  },
+  iconContainer: 
+  {
+    height: 50,
+    width: 50,
+    backgroundColor: COLORS.primary,
+    elevation: 40,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  listItem: 
+  {
+    padding: 20,
+    backgroundColor: COLORS.white,
+    flexDirection: 'row',
+    elevation: 12,
+    borderRadius: 7,
+    marginVertical: 10,
+  },
+  actionIcon:
+   {
+    height: 25,
+    width: 25,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'red',
+    marginLeft: 5,
+    borderRadius: 3,
+  },
+  header: 
+  {
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  textTo : {
+    color : 'black'
+  }
+});
+export default Landing;
